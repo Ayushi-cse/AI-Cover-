@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Cover Letter Generator — SaaS Engineering Sprint 4</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>" />
+  <!-- Main Application CSS -->
+  <link rel="stylesheet" href="./src/css/style.css" />
+  <!-- Mozilla PDF.js CDN for Client-Side Resume Extraction -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg class="w-5 h-5" width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" />
+        </svg>
+      </div>
+      <div>
+        <h1 class="brand-title">CoverCraft AI</h1>
+        <p style="font-size: 0.725rem; color: var(--text-subtle); margin-top: -3px;">SaaS AI Cover Letter Utility</p>
+      </div>
+    </div>
+
+    <!-- Mode Switcher & Security Status -->
+    <div class="nav-actions">
+      <!-- Phase 1 vs Phase 2 Mode Switcher -->
+      <div class="mode-tabs" role="tablist">
+        <button id="mode-ai" class="mode-tab active-tab" type="button" title="Google Gemini 1.5 Flash API">
+          <span>✨</span> AI Mode (Gemini)
+        </button>
+        <button id="mode-simulation" class="mode-tab" type="button" title="Phase 1 MVP Hardcoded Template Simulation">
+          <span>⚡</span> Simulation (MVP)
+        </button>
+      </div>
+
+      <!-- API Key Status Pill -->
+      <div id="api-key-badge"></div>
+
+      <!-- Settings Modal Button -->
+      <button id="open-settings-btn" class="btn btn-secondary btn-sm" type="button" title="API Key Settings">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      </button>
+
+      <!-- Dark / Light Theme Toggle -->
+      <button id="theme-toggle-btn" class="btn btn-secondary btn-sm" type="button" title="Toggle Dark/Light Mode">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Application Container -->
+  <main class="container">
+    <div class="app-grid">
+
+      <!-- LEFT COLUMN: Input Configuration & Resume Upload -->
+      <section class="form-container">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              Candidate & Target Parameters
+            </h2>
+            <div style="display: flex; gap: 0.5rem;">
+              <button id="load-demo-btn" type="button" class="btn btn-secondary btn-sm" title="Quickly load sample data for QA evaluation">
+                ⚡ Demo Data
+              </button>
+              <button id="clear-form-btn" type="button" class="btn btn-ghost btn-sm" title="Clear all fields">
+                Reset
+              </button>
+            </div>
+          </div>
+
+          <!-- Parameter Form -->
+          <form id="cover-letter-form">
+            <!-- Row: Candidate Name & Target Company -->
+            <div class="form-row">
+              <div class="form-group">
+                <label for="candidate-name" class="form-label">Candidate Name <span class="required">*</span></label>
+                <input id="candidate-name" type="text" class="form-input" placeholder="e.g. Alex Morgan" required />
+              </div>
+              <div class="form-group">
+                <label for="target-company" class="form-label">Target Company <span class="required">*</span></label>
+                <input id="target-company" type="text" class="form-input" placeholder="e.g. Stripe, Google, Spotify" required />
+              </div>
+            </div>
+
+            <!-- Job Role / Title -->
+            <div class="form-group">
+              <label for="job-role" class="form-label">Target Job Role <span class="required">*</span></label>
+              <input id="job-role" type="text" class="form-input" placeholder="e.g. Senior Full-Stack Engineer" required />
+            </div>
+
+            <!-- Key Skills -->
+            <div class="form-group">
+              <label for="key-skills" class="form-label">Core Skills & Tech Stack <span class="required">*</span></label>
+              <input id="key-skills" type="text" class="form-input" placeholder="e.g. TypeScript, React, Node.js, GraphQL, PostgreSQL, System Design" required />
+              <p style="font-size: 0.75rem; color: var(--text-subtle); margin-top: 0.25rem;">Separate with commas for optimal LLM context matching.</p>
+            </div>
+
+            <!-- Phase 3: Resume Upload Dropzone -->
+            <div class="form-group">
+              <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Resume Context (PDF / TXT)</span>
+                <span style="font-size: 0.7rem; color: var(--accent); font-weight: 500;">Phase 3: Smart Extraction</span>
+              </label>
+
+              <div id="resume-dropzone" class="dropzone">
+                <input id="resume-file-input" type="file" accept=".pdf,.txt,.md" style="display: none;" />
+                
+                <!-- Initial Dropzone Prompt -->
+                <div id="upload-prompt">
+                  <svg class="dropzone-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  <p style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">Drop your resume PDF here, or <span style="color: var(--primary); text-decoration: underline;">browse</span></p>
+                  <p style="font-size: 0.75rem; color: var(--text-subtle); margin-top: 0.25rem;">PDF or text up to 10MB • Extracted client-side via PDF.js</p>
+                </div>
+
+                <!-- Extraction Progress State -->
+                <div id="upload-progress-container" class="hidden">
+                  <p id="upload-progress-label" style="font-size: 0.825rem; font-weight: 500; color: var(--primary);">Reading PDF structure...</p>
+                  <div class="progress-track">
+                    <div id="upload-progress-bar" class="progress-fill" style="width: 25%;"></div>
+                  </div>
+                </div>
+
+                <!-- Extracted Badge View -->
+                <div id="resume-badge" class="hidden" style="display: flex; align-items: center; justify-content: space-between; background: rgba(59, 130, 246, 0.08); padding: 0.65rem 0.85rem; border-radius: var(--radius-md); border: 1px solid rgba(59, 130, 246, 0.25);">
+                  <div style="display: flex; align-items: center; gap: 0.5rem; text-align: left;">
+                    <svg width="24" height="24" fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <div>
+                      <p id="resume-file-name" style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">resume.pdf</p>
+                      <p id="resume-word-count" style="font-size: 0.725rem; color: var(--text-muted);">482 words extracted</p>
+                    </div>
+                  </div>
+                  <button id="remove-resume-btn" type="button" class="btn btn-ghost btn-sm" style="color: var(--danger);" title="Remove Resume">
+                    ✕
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Job Description (Contextual Alignment) -->
+            <div class="form-group">
+              <label for="job-description" class="form-label">Job Description / Requirements (Optional)</label>
+              <textarea id="job-description" class="form-textarea" placeholder="Paste the job posting requirements or key responsibilities for targeted prompt engineering..."></textarea>
+            </div>
+
+            <!-- Tone & Length Row -->
+            <div class="form-row">
+              <div class="form-group">
+                <label for="tone-select" class="form-label">Tone & Style</label>
+                <select id="tone-select" class="form-select">
+                  <option value="professional" selected>Corporate Professional</option>
+                  <option value="confident">Confident & Bold</option>
+                  <option value="startup">High-Growth Startup / Agile</option>
+                  <option value="executive">Executive / Leadership</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="length-select" class="form-label">Target Length</label>
+                <select id="length-select" class="form-select">
+                  <option value="short">Short (~220 words)</option>
+                  <option value="medium" selected>Standard (~350 words)</option>
+                  <option value="detailed">In-Depth (~480 words)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div style="margin-top: 1.5rem;">
+              <button id="generate-btn" type="submit" class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-size: 1rem;">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right: 0.5rem; display: inline;">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Generate with Gemini AI
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- RIGHT COLUMN: Output Document & SaaS Tools -->
+      <section class="output-container">
+        <div class="card output-pane">
+          <!-- Card Header with SaaS Actions -->
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Generated Cover Letter
+              </h2>
+              <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem;">
+                <span id="generation-mode-tag" style="font-size: 0.725rem; font-weight: 600; color: var(--accent);">Ready</span>
+                <span style="color: var(--text-subtle); font-size: 0.725rem;">•</span>
+                <span id="output-word-count" style="font-size: 0.725rem; color: var(--text-muted);">0 words</span>
+                <span style="color: var(--text-subtle); font-size: 0.725rem;">•</span>
+                <span id="output-read-time" style="font-size: 0.725rem; color: var(--text-muted);">~0 min</span>
+                <span style="color: var(--text-subtle); font-size: 0.725rem;">•</span>
+                <span id="output-latency" style="font-size: 0.725rem; color: var(--text-subtle);">0ms</span>
+              </div>
+            </div>
+
+            <!-- Action Utilities -->
+            <div class="output-actions" style="display: flex; gap: 0.45rem;">
+              <button id="toggle-edit-btn" type="button" class="btn btn-secondary btn-sm" title="Toggle between formatted preview and Markdown editor">
+                Edit Markdown
+              </button>
+              <button id="copy-letter-btn" type="button" class="btn btn-secondary btn-sm" title="Copy letter to clipboard">
+                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right: 0.35rem; display: inline;">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                Copy
+              </button>
+              <button id="download-txt-btn" type="button" class="btn btn-secondary btn-sm" title="Download as .txt">
+                .TXT
+              </button>
+              <button id="download-md-btn" type="button" class="btn btn-secondary btn-sm" title="Download as .md">
+                .MD
+              </button>
+              <button id="print-letter-btn" type="button" class="btn btn-secondary btn-sm" title="Print or save as PDF">
+                Print/PDF
+              </button>
+            </div>
+          </div>
+
+          <!-- 1. EMPTY STATE -->
+          <div id="output-empty-state" class="empty-state">
+            <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <h3 style="font-size: 1.15rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.4rem;">No Cover Letter Generated Yet</h3>
+            <p style="font-size: 0.85rem; max-width: 380px; margin-bottom: 1.25rem;">
+              Fill in your target role and skills on the left, or click <strong style="color: var(--primary);">"Demo Data"</strong> to test the generation pipeline with one click.
+            </p>
+            <div style="display: flex; gap: 0.75rem; font-size: 0.75rem; color: var(--text-subtle);">
+              <span>✓ Phase 1 Hardcoded Fallback</span>
+              <span>✓ Phase 2 Gemini 1.5 Flash</span>
+              <span>✓ Phase 3 Resume PDF Ingestion</span>
+            </div>
+          </div>
+
+          <!-- 2. LOADING STATE (Phase 2 State Management) -->
+          <div id="output-loading-state" class="loading-state hidden">
+            <div class="pulse-spinner"></div>
+            <h3 style="font-size: 1.1rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.35rem;">Synthesizing Cover Letter...</h3>
+            <p id="loading-status-text" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">Connecting to Google Gemini API...</p>
+            <div class="progress-track" style="width: 280px;">
+              <div id="loading-progress-bar" class="progress-fill" style="width: 45%;"></div>
+            </div>
+            <p style="font-size: 0.75rem; color: var(--text-subtle); margin-top: 0.5rem;">Handling 2-5s LLM latency • Prompt engineering in progress</p>
+            <button id="cancel-generation-btn" type="button" class="btn btn-ghost btn-sm" style="margin-top: 1rem; color: var(--danger);">
+              Cancel Generation
+            </button>
+          </div>
+
+          <!-- 3. LOADED OUTPUT STATE -->
+          <div id="output-loaded-state" class="hidden" style="flex: 1; display: flex; flex-direction: column;">
+            <!-- Clean HTML Rendered View (Phase 3 Paragraphs) -->
+            <div id="letter-rendered-content" class="letter-document"></div>
+
+            <!-- Raw Markdown Editor View -->
+            <textarea id="letter-raw-editor" class="raw-markdown-editor hidden" spellcheck="false"></textarea>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Settings & API Key Configuration Modal -->
+  <div id="settings-modal" class="modal-backdrop hidden">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-main);">Environment & API Key Settings</h3>
+        <button id="close-settings-btn" type="button" class="btn btn-ghost btn-sm">✕</button>
+      </div>
+
+      <div style="margin-bottom: 1.25rem; font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">
+        <p><strong>Security Protocol (CI/CD Verification):</strong></p>
+        <p style="margin-top: 0.25rem;">In accordance with Sprint 4 specifications, the API key must be defined in your root <code>.env</code> file:</p>
+        <pre style="background: var(--bg-secondary); padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin: 0.5rem 0; font-family: monospace; font-size: 0.8rem; color: var(--accent);">VITE_GEMINI_API_KEY=AIzaSy...</pre>
+        <p style="font-size: 0.75rem; color: var(--text-subtle);">Ensure <code>.env</code> is listed in <code>.gitignore</code> before pushing to public repositories.</p>
+      </div>
+
+      <!-- Current status -->
+      <div style="margin-bottom: 1rem;">
+        <label class="form-label">Current Configuration Status:</label>
+        <div id="api-key-status-display"></div>
+      </div>
+
+      <!-- Manual override field for browser-only testing -->
+      <div class="form-group">
+        <label for="custom-api-key-input" class="form-label">Session API Key Override (Optional Browser Storage):</label>
+        <input id="custom-api-key-input" type="password" class="form-input" placeholder="Paste Gemini API Key here for instant testing..." />
+        <p style="font-size: 0.725rem; color: var(--text-subtle); margin-top: 0.35rem;">
+          Saved strictly in your browser's local storage for demo recordings. Never sent to third parties.
+        </p>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem;">
+        <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style="font-size: 0.8rem; color: var(--primary); text-decoration: underline;">
+          Get Free Gemini API Key →
+        </a>
+        <button id="save-api-key-btn" type="button" class="btn btn-primary btn-sm">
+          Save Settings
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- Main Application Script (ES Module) -->
+  <script type="module" src="./src/js/app.js"></script>
+</body>
+</html>
